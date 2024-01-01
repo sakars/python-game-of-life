@@ -7,20 +7,13 @@ It attempts to use the C extension if it is available, otherwise it uses a pytho
 
 Both implementations utilize numpy's stride manipulation to speed up the neighbor summation.
 
-The python implementation is just under 3 times slower than the C implementation.
+The python implementation is around 2 times slower than the C implementation.
 """
 import time
 import pygame
 import numpy as np
 
-# try to import the C extension if USE_C is True
-USE_C = True
-if USE_C:
-	try:
-		import GOL
-	except ImportError:
-		USE_C = False
-		print("C extension not found, using python implementation")
+from gol_step import gol_c as game_of_life_step
 
 class GameOfLifeSim:
 	"""Game of life simulator class
@@ -67,38 +60,31 @@ class GameOfLifeSim:
 	def loop(self):
 		"""Main loop of the game of life"""
 		
-		## This is the old version of the neighbour summation, it is slower but slightly easier to understand
+		self.board = game_of_life_step(self.board)
 		
-		# create a 4d array with the 3x3 neighborhood of each cell in the board
-		# This is just a view of the board, so no additional memory is used
-		# conv = np.lib.stride_tricks.as_strided(self.board, shape=(self.board.shape[0]-2,self.board.shape[1]-2,3,3),
-		# 	strides=(self.board.strides[0], self.board.strides[1], self.board.strides[0], self.board.strides[1]))
-		# # sum the neighborhood of each cell resulting in a 2d array with the amount of neighbors of each cell
-		# conv_sum = np.pad(np.sum(conv, axis=(2,3)) - self.board[1:-1,1:-1], 1, mode='constant', constant_values=0)
-		
-		if USE_C:
-			self.board = GOL.step_NpArr(self.board)
-		else:
-			# create a 3d array with the 3x1 neighborhood of each non-border cell in the board
-			conv = np.lib.stride_tricks.as_strided(self.board, shape=(self.board.shape[0]-2,self.board.shape[1],3),
-				strides=(self.board.strides[0], self.board.strides[1], self.board.strides[0]))
-			# sum the neighborhood of each cell resulting in a 2d array with the amount of alive horizontal neighbors of each cell
-			conv_sum = np.sum(conv, axis=2, dtype=np.uint8)
+		# if USE_C:
+		# 	self.board = GOL.step_NpArr(self.board)
+		# else:
+		# 	# create a 3d array with the 3x1 neighborhood of each non-border cell in the board
+		# 	conv = np.lib.stride_tricks.as_strided(self.board, shape=(self.board.shape[0]-2,self.board.shape[1],3),
+		# 		strides=(self.board.strides[0], self.board.strides[1], self.board.strides[0]))
+		# 	# sum the neighborhood of each cell resulting in a 2d array with the amount of alive horizontal neighbors of each cell
+		# 	conv_sum = np.sum(conv, axis=2, dtype=np.uint8)
 
-			# create a 3d array with the 3x3 neighborhood of each non-border cell in the board
-			# because we already have the horizontal neighbors, the 1x3 neighborhood represents the whole 3x3 neighborhood
-			conv_sum = np.lib.stride_tricks.as_strided(conv_sum, shape=(conv_sum.shape[0],conv_sum.shape[1]-2,3),
-				strides=(conv_sum.strides[0], conv_sum.strides[1], conv_sum.strides[1]))
+		# 	# create a 3d array with the 3x3 neighborhood of each non-border cell in the board
+		# 	# because we already have the horizontal neighbors, the 1x3 neighborhood represents the whole 3x3 neighborhood
+		# 	conv_sum = np.lib.stride_tricks.as_strided(conv_sum, shape=(conv_sum.shape[0],conv_sum.shape[1]-2,3),
+		# 		strides=(conv_sum.strides[0], conv_sum.strides[1], conv_sum.strides[1]))
 			
-			# sum the neighborhood of each cell resulting in a 2d array with the amount of total alive neighbors of each cell
-			conv_sum = np.pad(np.sum(conv_sum, axis=2) - self.board[1:-1,1:-1], 1, mode='constant', constant_values=0)
+		# 	# sum the neighborhood of each cell resulting in a 2d array with the amount of total alive neighbors of each cell
+		# 	conv_sum = np.pad(np.sum(conv_sum, axis=2) - self.board[1:-1,1:-1], 1, mode='constant', constant_values=0)
 			
-			# apply the game of life rules
-			alive = self.board == 1
-			is_three = conv_sum == 3
-			is_two = conv_sum == 2
-			self.board[alive & (np.logical_not(is_two | is_three))] = 0
-			self.board[np.logical_not(alive) & is_three] = 1
+		# 	# apply the game of life rules
+		# 	alive = self.board == 1
+		# 	is_three = conv_sum == 3
+		# 	is_two = conv_sum == 2
+		# 	self.board[alive & (np.logical_not(is_two | is_three))] = 0
+		# 	self.board[np.logical_not(alive) & is_three] = 1
 		
 		# size of the visible board in cells
 		calc_width = round(self.width*self.scale)

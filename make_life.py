@@ -5,6 +5,15 @@ import math
 from game import GameOfLifeSim
 
 class MakeLife:
+	"""Game of life creation tool class
+	This class is responsible for handling the window
+	that allows the user to create a game of life pattern
+	
+	It controls pygame so that the simulation can be displayed on the screen
+	That means no other pygame should be used simultaneously.
+
+	It can also run the game of life on the current board for testing purposes
+	"""
 	board = None
 	width = None
 	height = None
@@ -71,10 +80,12 @@ class MakeLife:
 		return self.board
 	
 	def start(self):
+		"""Starts the game of life creation tool"""
 		self.running = True
 		return self.loop()
 	
 	def to_indices(self, pos):
+		"""Converts a position on the screen to the corresponding indices on the board"""
 		unclamped_pos = (
 			math.floor(pos[0]/self.display_size[0]*self.width),
 			math.floor(pos[1]/self.display_size[1]*self.height)
@@ -86,11 +97,17 @@ class MakeLife:
 	
 
 	def run_life(self):
-		"""Run the game of life on the current board"""
+		"""Run the game of life on the current board
+		
+		This function halts the creation tool and runs the game of life on the current board
+		
+		A new window is opened to display the game of life
+
+		After the game of life is finished, the creation tool is resumed
+		"""
 		if self.running:
 			pygame.display.update()
 			pygame.quit()
-		#print(self.board)
 		padded_board =np.array(self.board)# np.pad(self.board, 20, mode='constant')
 		game = GameOfLifeSim(board=padded_board, display_size=self.display_size)
 		game.start()
