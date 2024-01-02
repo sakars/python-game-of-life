@@ -28,12 +28,16 @@ class GameOfLifeSim:
 	width = 1200
 	height = 800
 	scale = 1
-	min_wait = 0
 	last_frame = 0
 	board = None
 	frame_number = 0
 	frame_time = 0
-	def __init__(self, width=None, height=None, display_size=None, board=None) -> None:
+	_min_loop_wait = 1
+	_last_loop_time = 0
+	_paused = False
+
+	def __init__(self, width=None, height=None, display_size=None, board=None, step_function: callable = game_of_life_step) -> None:
+		self.step_function = step_function
 		if board is not None:
 			self.width = board.shape[0]
 			self.height = board.shape[1]
@@ -51,7 +55,8 @@ class GameOfLifeSim:
 		self.board = np.pad(self.board, 1, mode='constant', constant_values=0)
 		self.running = False
 		self.display = pygame.display.set_mode(size=self.display_size)
-	
+		self._last_loop_time = time.time()
+
 	def get_prescaler(self):
 		"""Returns the prescaler that the board
 		needs to be scaled by to fit the screen"""
@@ -59,33 +64,13 @@ class GameOfLifeSim:
 
 	def loop(self):
 		"""Main loop of the game of life"""
-		
-		self.board = game_of_life_step(self.board)
-		
-		# if USE_C:
-		# 	self.board = GOL.step_NpArr(self.board)
-		# else:
-		# 	# create a 3d array with the 3x1 neighborhood of each non-border cell in the board
-		# 	conv = np.lib.stride_tricks.as_strided(self.board, shape=(self.board.shape[0]-2,self.board.shape[1],3),
-		# 		strides=(self.board.strides[0], self.board.strides[1], self.board.strides[0]))
-		# 	# sum the neighborhood of each cell resulting in a 2d array with the amount of alive horizontal neighbors of each cell
-		# 	conv_sum = np.sum(conv, axis=2, dtype=np.uint8)
+		# calculate the time since the last frame
+		tim = time.time()
+		delta_time = tim-self._last_loop_time
+		if delta_time > self._min_loop_wait and not self._paused:
+			self.board = self.step_function(self.board)
+			self._last_loop_time = self._last_loop_time + self._min_loop_wait
 
-		# 	# create a 3d array with the 3x3 neighborhood of each non-border cell in the board
-		# 	# because we already have the horizontal neighbors, the 1x3 neighborhood represents the whole 3x3 neighborhood
-		# 	conv_sum = np.lib.stride_tricks.as_strided(conv_sum, shape=(conv_sum.shape[0],conv_sum.shape[1]-2,3),
-		# 		strides=(conv_sum.strides[0], conv_sum.strides[1], conv_sum.strides[1]))
-			
-		# 	# sum the neighborhood of each cell resulting in a 2d array with the amount of total alive neighbors of each cell
-		# 	conv_sum = np.pad(np.sum(conv_sum, axis=2) - self.board[1:-1,1:-1], 1, mode='constant', constant_values=0)
-			
-		# 	# apply the game of life rules
-		# 	alive = self.board == 1
-		# 	is_three = conv_sum == 3
-		# 	is_two = conv_sum == 2
-		# 	self.board[alive & (np.logical_not(is_two | is_three))] = 0
-		# 	self.board[np.logical_not(alive) & is_three] = 1
-		
 		# size of the visible board in cells
 		calc_width = round(self.width*self.scale)
 		calc_height = round(self.height*self.scale)
@@ -101,17 +86,13 @@ class GameOfLifeSim:
 		surf = pygame.transform.scale_by(surf, 1/(self.scale/self.get_prescaler()))
 		
 		# fill the screen with gray to prevent artifacts
-		#self.display.fill((100,100,100))
+		self.display.fill((0,0,0))
 
 		# draw the surface
 		self.display.blit(surf, (0,0), (0,0,self.display_size[0], self.display_size[1]))
 
 		# wait for the next frame, if necessary
 		tim = time.time()
-		delta_time = tim - self.last_frame
-		if delta_time < self.min_wait:
-			time.sleep(self.min_wait - delta_time)
-		#time.sleep(3)
 		self.last_frame = tim
 		#self.frame_time += delta_time
 		self.frame_number += 1
@@ -129,11 +110,11 @@ class GameOfLifeSim:
 		self.display = pygame.display.set_mode(size=self.display_size)
 		self.last_frame = time.time()
 
-		running = True
-		while running:
+		self.running = True
+		while self.running:
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
-					running = False
+					self.running = False
 				if event.type == pygame.MOUSEBUTTONDOWN:
 					#print(event.button)
 					#print(event.pos)
@@ -145,6 +126,25 @@ class GameOfLifeSim:
 					#print(event)
 					if event.buttons[0]:
 						self.delta_move(*event.rel)
+				if event.type == pygame.KEYDOWN:
+					if event.key == pygame.K_ESCAPE:
+						self.running = False
+					if event.key == pygame.K_SPACE:
+						self.board = self.step_function(self.board)
+					if event.key == pygame.K_COMMA:
+						self._min_loop_wait *= 2
+						print('Target fps: %3.3f' % (1/self._min_loop_wait))
+					if event.key == pygame.K_PERIOD:
+						self._min_loop_wait /= 2
+						print('Target fps: %3.3f' % (1/self._min_loop_wait))
+					if event.key == pygame.K_p:
+						if self._paused:
+							self._last_loop_time = time.time()
+							print('Unpaused')
+						else:
+							print('Paused')
+						self._paused = not self._paused
+
 			self.loop()
 			pygame.display.update()
 
