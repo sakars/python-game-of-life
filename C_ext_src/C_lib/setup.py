@@ -1,10 +1,10 @@
+"""This file is used to compile the C code into a binary file that can be imported into python."""
+import os
+import sysconfig
 import glob
 from setuptools import Extension, setup
 import numpy as np
-import os
-import sysconfig
-import os
-# absolute path to search all text files inside a specific folder
+# Glob pattern for the C source files
 path = r'./GOL/core/src/*.c'
 files = glob.glob(path)
 
