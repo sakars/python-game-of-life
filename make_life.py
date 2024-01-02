@@ -20,11 +20,15 @@ class MakeLife:
 	display = None
 	running = None
 	display_size = None
-	def __init__(self, width:int, height:int, display_size: (int, int)) -> None:
+	def __init__(self, width:int, height:int, display_size: (int, int), board=None) -> None:
 		pygame.init()
 		self.width = width
 		self.height = height
 		self.board = np.zeros((self.width, self.height), dtype=np.uint8)
+		if board is not None:
+			if board.shape[0] != self.width or board.shape[1] != self.height:
+				raise ValueError("board must have the same dimensions as the creation tool")
+			self.board = board
 		self.display = pygame.display.set_mode(display_size)
 		self.running = False
 		self.display_size = display_size

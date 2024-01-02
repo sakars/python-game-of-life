@@ -55,6 +55,16 @@ def run_pattern_maker():
 		save_state(file_name, pattern)
 	root.deiconify()
 
+def run_edit_pattern():
+	resolution = (int(width_input.get()), int(height_input.get()))
+	root.withdraw()
+	file_path = filedialog.askopenfilename(initialdir=os.getcwd(), filetypes=[('RLE files', '*.rle')])
+	if file_path:
+		pattern = load_data(file_name=file_path, min_size=(80, 50))
+		pattern = MakeLife(pattern.shape[0], pattern.shape[1], resolution, pattern).start()
+		save_state(file_path, pattern)
+	root.deiconify()
+
 if __name__ == '__main__':
 	root.title("Game of Life")
 	root.geometry("300x300")
@@ -71,6 +81,7 @@ if __name__ == '__main__':
 	tk.Button(root, text="Select file", command=run_game_from_file).pack(fill='both')
 	tk.Button(root, text="Random layout", command=run_game_from_random).pack(fill='both')
 	tk.Button(root, text="Make pattern", command=run_pattern_maker).pack(fill='both')
+	tk.Button(root, text="Edit pattern", command=run_edit_pattern).pack(fill='both')
 	tk.Button(root, text="Quit", command=root.quit).pack(fill='both')
 	root.mainloop()
 else:

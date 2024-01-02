@@ -8,11 +8,12 @@ import numpy as np
 # segment2_x, segment2_y, segment2_width, segment2_height
 # segment_data
 
-def rle_decode(file_name):
+def rle_decode(file_name, min_size=(0,0)):
 	"""Decodes a RLE file"""
 	read_file = open(file_name, 'r', encoding='utf-8')
 	state = np.zeros((1200, 800), dtype=np.uint8)
 	state_buffer = state
+	offset = (0, 0)
 	while True:
 		line = read_file.readline()
 		if line.startswith('!'):
@@ -20,14 +21,17 @@ def rle_decode(file_name):
 		elif line.startswith('#'):
 			if line[1] == 'R':
 				params = line.split(' ')
-				state_buffer = state[int(params[1]):, int(params[2]):]
+				# state_buffer = state[int(params[1]):, int(params[2]):]
+				offset = (int(params[1]), int(params[2]))
 		else:
 			break
 	params = line.split(',')
 	params[0] = params[0].split('=')[1]
 	params[1] = params[1].split('=')[1]
-	width = int(params[0])
-	height = int(params[1])
+	width = max(int(params[0])+offset[0], min_size[0])
+	height = max(int(params[1])+offset[1], min_size[1])
+	state = np.zeros((width, height), dtype=np.uint8)
+	state_buffer = state[offset[0]:, offset[1]:	]
 	x = 0
 	y = 0
 	buffer = ''
@@ -65,19 +69,22 @@ def rle_decode(file_name):
 	return state
 
 
-def load_data(file_name):
+def load_data(file_name, min_size=None):
 	"""Loads a state from a file"""
 	if file_name is None:
 		return None
 	
 	if file_name.endswith('.rle'):
-		return rle_decode(file_name)
+		return rle_decode(file_name, min_size)
 
 	read_file = open(file_name, 'r', encoding='utf-8')
 	size_line = read_file.readline()
 	size = size_line.split(',')
 	width = int(size[0])
 	height = int(size[1])
+	if min_size is not None:
+		width = max(width, min_size[0])
+		height = max(height, min_size[1])
 	state = np.zeros((width, height), dtype=np.uint8)
 	segment_amount = int(read_file.readline())
 	for i in range(segment_amount):
