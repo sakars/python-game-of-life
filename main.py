@@ -11,6 +11,8 @@ from state_loader import load_data, save_state
 from make_life import MakeLife
 
 root = tk.Tk()
+width_input = None
+height_input = None
 
 def run_game_from_file():
 	# Open file dialog
@@ -22,7 +24,13 @@ def run_game_from_file():
 		print("Selected file:", file_path)
 		try:
 			game = GameOfLifeSim(board=load_data(file_name=file_path))
-		except Exception as e:
+		except FileNotFoundError as e:
+			print("Error loading file:", e)
+			tk.messagebox.showerror("Error", "Error loading file")
+		except ValueError as e:
+			print("Error loading file:", e)
+			tk.messagebox.showerror("Error", "Error loading file")
+		except FileExistsError as e:
 			print("Error loading file:", e)
 			tk.messagebox.showerror("Error", "Error loading file")
 	else:
@@ -35,12 +43,13 @@ def run_game_from_file():
 
 def run_game_from_random():
 	root.withdraw()
-	GameOfLifeSim(1200, 800).start()
+	GameOfLifeSim(int(width_input.get()), int(height_input.get())).start()
 	root.deiconify()
 
 def run_pattern_maker():
+	resolution = (int(width_input.get()), int(height_input.get()))
 	root.withdraw()
-	pattern = MakeLife(80, 50, (1200, 800)).start()
+	pattern = MakeLife(80, 50, resolution).start()
 	file_name = filedialog.asksaveasfilename(initialdir=os.getcwd(), defaultextension='.rle', filetypes=[('RLE files', '*.rle')])
 	if file_name:
 		save_state(file_name, pattern)
@@ -49,10 +58,16 @@ def run_pattern_maker():
 if __name__ == '__main__':
 	root.title("Game of Life")
 	root.geometry("300x300")
-	width_input = tk.Entry(root)
-	width_input.pack(fill='both')
-	height_input = tk.Entry(root)
-	height_input.pack(fill='both')
+	tk.Label(root, text="Resolution").pack(fill='both')
+	res_frame = tk.Frame(root)
+	res_frame.pack(fill='both')
+	width_input = tk.Entry(res_frame)
+	width_input.pack(side='left', fill='both', expand=True)
+	width_input.insert(0, "1200")
+	tk.Label(res_frame, text="X").pack(side='left', fill='both', expand=False)
+	height_input = tk.Entry(res_frame)
+	height_input.pack(side = 'right',fill='both', expand=True)
+	height_input.insert(0, "800")
 	tk.Button(root, text="Select file", command=run_game_from_file).pack(fill='both')
 	tk.Button(root, text="Random layout", command=run_game_from_random).pack(fill='both')
 	tk.Button(root, text="Make pattern", command=run_pattern_maker).pack(fill='both')
