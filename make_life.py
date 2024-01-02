@@ -46,7 +46,7 @@ class MakeLife:
 						self.board[board_index[0],board_index[1]] = 0
 						#print(self.board)
 				elif event.type == pygame.KEYDOWN:
-					if event.key == pygame.K_RETURN:
+					if event.key == pygame.K_ESCAPE:
 						self.running = False
 					elif event.key == pygame.K_r:
 						# Run the game of life on the current board
