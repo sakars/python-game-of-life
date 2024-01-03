@@ -52,12 +52,13 @@ class GameOfLifeSim:
 		else:
 			raise ValueError('either width and height or board must be specified')
 		if display_size is None:
-			self.display_size = (self._width, self._height)
+			self._display_size = (self._width, self._height)
 		else:
-			self.display_size = display_size
+			self._display_size = display_size
+		print(self._display_size)
 		self._board = np.pad(self._board, 1, mode='constant', constant_values=0)
 		self.running = False
-		self.display = pygame.display.set_mode(size=self.display_size)
+		self.display = pygame.display.set_mode(size=self._display_size)
 		self._last_loop_time = time.time()
 
 	def __enter__(self):
@@ -71,7 +72,7 @@ class GameOfLifeSim:
 	def get_prescaler(self):
 		"""Returns the prescaler that the board
 		needs to be scaled by to fit the screen"""
-		return min(self.display_size[0]/self._width, self.display_size[1]/self._height)
+		return min(self._display_size[0]/self._width, self._display_size[1]/self._height)
 
 	def handle_pygame_events(self):
 		for event in pygame.event.get():
@@ -141,7 +142,7 @@ class GameOfLifeSim:
 		self.display.fill((0,0,0))
 
 		# draw the surface
-		self.display.blit(surf, (0,0), (0,0,self.display_size[0], self.display_size[1]))
+		self.display.blit(surf, (0,0), (0,0,self._display_size[0], self._display_size[1]))
 
 		# wait for the next frame, if necessary
 		tim = time.time()
@@ -159,7 +160,7 @@ class GameOfLifeSim:
 	def _init(self):
 		"""Initializes pygame and the game of life simulation"""
 		pygame.init()
-		self.display = pygame.display.set_mode(size=self.display_size)
+		self.display = pygame.display.set_mode(size=self._display_size)
 		self._last_frame = time.time()
 		self.running = True
 		self._game_tick = 0

@@ -69,7 +69,7 @@ def rle_decode(file_name, min_size=(0,0)):
 	return state
 
 
-def load_data(file_name, min_size=None):
+def load_data(file_name, min_size=(0,0)):
 	"""Loads a state from a file"""
 	if file_name is None:
 		return None
@@ -100,6 +100,7 @@ def load_data(file_name, min_size=None):
 			line = [int(x) for x in line]
 			state[x:x+segment_width, y+j] = line
 	read_file.close()
+	print(state.shape)
 	return state
 
 def find_bounds(state): 
