@@ -8,6 +8,8 @@ import tkinter as tk
 from tkinter import filedialog
 from state_loader import load_data, save_state
 from make_life import MakeLife
+from gol_step import *
+import time
 
 root = tk.Tk()
 width_input = None
@@ -64,7 +66,67 @@ def run_edit_pattern():
 		save_state(file_path, pattern)
 	root.deiconify()
 
+def run_benchmaster():
+	"""This function is used to benchmark the different step functions"""
+	root.withdraw()
+
+	game = GameOfLifeSim(width=120, height=80, display_size=(1200, 800), step_function=gol_py_trivial)
+	game.set_frame_rate(10000)
+	start_time = time.time()
+	with game as tick:
+		while game.get_current_tick() < 100:
+			tick()
+	print("Time for 100 steps with gol_py_trivial (the board is reduced by 100 times):", time.time() - start_time)
+
+
+	game = GameOfLifeSim(width=1200, height=800, step_function=gol_py_simple)
+	game.set_frame_rate(10000)
+	start_time = time.time()
+	with game as tick:
+		while game.get_current_tick() < 100:
+			tick()
+	print("Time for 100 steps with gol_py_simple:", time.time() - start_time)
+
+	game = GameOfLifeSim(width=1200, height=800, step_function=gol_py_partial_sums)
+	game.set_frame_rate(10000)
+	start_time = time.time()
+	with game as tick:
+		while game.get_current_tick() < 100:
+			tick()
+	print("Time for 100 steps with gol_py_partial_sums:", time.time() - start_time)
+
+	game = GameOfLifeSim(width=1200, height=800, step_function=gol_c_numpy_api)
+	game.set_frame_rate(10000)
+	start_time = time.time()
+	with game as tick:
+		while game.get_current_tick() < 100:
+			tick()
+	print("Time for 100 steps with gol_c:", time.time() - start_time)
+
+	game = GameOfLifeSim(width=1200, height=800, step_function=gol_c_pylist_multithread)
+	game.set_frame_rate(10000)
+	start_time = time.time()
+	with game as tick:
+		while game.get_current_tick() < 100:
+			tick()
+	print("Time for 100 steps with gol_c_pylist_multithread:", time.time() - start_time)
+
+	root.deiconify()
+
+
 if __name__ == '__main__':
+
+	# board = np.zeros((120, 80), dtype=np.uint8)
+	# # make a glider
+	# board[10, 10] = 1
+	# board[10, 11] = 1
+	# board[10, 12] = 1
+	# board[9, 12] = 1
+	# board[8, 11] = 1
+	# game = GameOfLifeSim(width=120, height=80, display_size=(1200, 800), board=board, step_function=gol_c_numpy_multithread)
+	# game.set_frame_rate(0.5)
+	# game.start()
+
 	root.title("Game of Life")
 	root.geometry("300x300")
 	tk.Label(root, text="Resolution").pack(fill='both')
@@ -81,6 +143,7 @@ if __name__ == '__main__':
 	tk.Button(root, text="Random layout", command=run_game_from_random).pack(fill='both')
 	tk.Button(root, text="Make pattern", command=run_pattern_maker).pack(fill='both')
 	tk.Button(root, text="Edit pattern", command=run_edit_pattern).pack(fill='both')
+	tk.Button(root, text="Benchmark", command=run_benchmaster).pack(fill='both')
 	tk.Button(root, text="Quit", command=root.quit).pack(fill='both')
 	root.mainloop()
 else:
