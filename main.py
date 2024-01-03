@@ -3,7 +3,6 @@ functions for running the game from a file, random layout or pattern maker.
 This is meant to be run, not imported.
 """
 import os
-import numpy as np
 from game import GameOfLifeSim
 import tkinter as tk
 from tkinter import filedialog
