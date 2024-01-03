@@ -47,7 +47,9 @@ def gol_py_partial_sums(board:np.ndarray) -> np.ndarray:
 try:
 	import GOL
 	gol_c = GOL.step_NpArr
+	gol_c_multithread = GOL.step_list_multithread
 except ImportError:
 	print("C extension not found, using python implementation")
 	gol_c = gol_py_partial_sums
+	gol_c_multithread = gol_py_partial_sums
 
