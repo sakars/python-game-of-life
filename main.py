@@ -18,6 +18,23 @@ height_res_input = None
 width_board_input = None
 height_board_input = None
 
+
+def fetch_resolution():
+	"""Fetches the resolution from the GUI"""
+	width = int(width_res_input.get())
+	height = int(height_res_input.get())
+	width = max(width, 1)
+	height = max(height, 1)
+	return (width, height)
+
+def fetch_board_size():
+	"""Fetches the board size from the GUI"""
+	width = int(width_board_input.get())
+	height = int(height_board_input.get())
+	width = max(width, 1)
+	height = max(height, 1)
+	return (width, height)
+
 def run_game_from_file():
 	# Open file dialog
 	file_path = filedialog.askopenfilename(initialdir=os.getcwd())
@@ -30,12 +47,9 @@ def run_game_from_file():
 			game = GameOfLifeSim(
 				board=load_data(
 					file_name=file_path, 
-					min_size=(
-						int(width_board_input.get()), 
-						int(height_board_input.get())
-						)
+					min_size=fetch_board_size()
 					),
-				display_size=(int(width_res_input.get()), int(height_res_input.get()))
+				display_size=fetch_resolution()
 				)
 		except FileNotFoundError as e:
 			print("Error loading file:", e)
@@ -56,14 +70,14 @@ def run_game_from_file():
 
 def run_game_from_random():
 	root.withdraw()
-	display_size = (int(width_res_input.get()), int(height_res_input.get()))
-	board_size = (int(width_board_input.get()), int(height_board_input.get()))
+	display_size = fetch_resolution()
+	board_size = fetch_board_size()
 	GameOfLifeSim(board_size[0], board_size[1], display_size=display_size).start()
 	root.deiconify()
 
 def run_pattern_maker():
-	resolution = (int(width_res_input.get()), int(height_res_input.get()))
-	board_size = (int(width_board_input.get()), int(height_board_input.get()))
+	resolution = fetch_resolution()
+	board_size = fetch_board_size()
 	root.withdraw()
 	pattern = MakeLife(board_size[0], board_size[1], resolution).start()
 	file_name = filedialog.asksaveasfilename(initialdir=os.getcwd(), defaultextension='.rle', filetypes=[('RLE files', '*.rle')])
@@ -72,8 +86,8 @@ def run_pattern_maker():
 	root.deiconify()
 
 def run_edit_pattern():
-	resolution = (int(width_res_input.get()), int(height_res_input.get()))
-	board_size = (int(width_board_input.get()), int(height_board_input.get()))
+	resolution = fetch_resolution()
+	board_size = fetch_board_size()
 	root.withdraw()
 	file_path = filedialog.askopenfilename(initialdir=os.getcwd(), filetypes=[('RLE files', '*.rle')])
 	if file_path:
