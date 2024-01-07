@@ -1,6 +1,24 @@
 
 import numpy as np
 
+def gol_py_slooow(board:np.ndarray) -> np.ndarray:
+	l = board.tolist()
+	lout = [[0 for x in range(len(l[0]))] for y in range(len(l))]
+	for x in range(1, len(l)-1):
+		for y in range(1, len(l[x])-1):
+			conv_sum = (
+				l[x-1][y-1] + l[x-1][y] + l[x-1][y+1] + 
+				l[x][y-1] + l[x][y+1] +
+				l[x+1][y-1] + l[x+1][y] + l[x+1][y+1])
+			lout[x][y] = l[x][y]
+			if l[x][y] == 1:
+				if conv_sum != 2 and conv_sum != 3:
+					lout[x][y] = 0
+			else:
+				if conv_sum == 3:
+					lout[x][y] = 1
+	return np.array(lout, dtype=np.uint8)
+
 def gol_py_trivial(board:np.ndarray) -> np.ndarray:
 	"""This is the trivial implementation of the game of life, it is very slow
 
@@ -9,7 +27,11 @@ def gol_py_trivial(board:np.ndarray) -> np.ndarray:
 	next_board = np.array(board, dtype=np.uint8)
 	for x in range(1, board.shape[0]-1):
 		for y in range(1, board.shape[1]-1):
-			conv_sum = np.sum(board[x-1:x+2,y-1:y+2]) - board[x,y]
+			conv_sum = (
+				board[x-1,y-1] + board[x-1,y] + board[x-1,y+1] +
+				board[x,y-1] + board[x,y+1] +
+				board[x+1,y-1] + board[x+1,y] + board[x+1,y+1]
+			)
 			next_board[x,y] = board[x,y]
 			if board[x,y] == 1:
 				if conv_sum != 2 and conv_sum != 3:
@@ -71,10 +93,10 @@ try:
 		listed = arr.tolist()
 		GOL.step_list_multithread(listed)
 		return np.array(listed, dtype=np.uint8)
-	#gol_c_numpy_multithread: callable(np.ndarray) = GOL.step_NpArr_multithread
+	HAS_C_EXTENSION = True
 except ImportError:
 	print("C extension not found, using python implementation")
 	gol_c_numpy_api = gol_py_partial_sums
 	gol_c_pylist_multithread = gol_py_partial_sums
-	#gol_c_numpy_multithread = gol_py_partial_sums
+	HAS_C_EXTENSION = False
 

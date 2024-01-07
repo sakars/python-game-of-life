@@ -55,7 +55,6 @@ class GameOfLifeSim:
 			self._display_size = (self._width, self._height)
 		else:
 			self._display_size = display_size
-		print(self._display_size)
 		self._board = np.pad(self._board, 1, mode='constant', constant_values=0)
 		self.running = False
 		self.display = pygame.display.set_mode(size=self._display_size)

@@ -103,7 +103,10 @@ def load_data(file_name, min_size=(0,0)):
 	print(state.shape)
 	return state
 
-def find_bounds(state): 
+def find_bounds(state):
+	"""Finds the bounds of a state of the game of life
+	(the smallest rectangle that contains all live cells)
+	"""
 	x_min = 0
 	x_max = state.shape[0]
 	y_min = 0

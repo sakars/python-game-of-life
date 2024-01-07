@@ -3,14 +3,15 @@ functions for running the game from a file, random layout or pattern maker.
 This is meant to be run, not imported.
 """
 import os
-from game import GameOfLifeSim
+import time
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
+from game import GameOfLifeSim
 from state_loader import load_data, save_state
 from make_life import MakeLife
-from gol_step import *
-import time
+from gol_step import (HAS_C_EXTENSION, gol_py_partial_sums, gol_py_simple, gol_py_trivial,
+	gol_py_slooow, gol_c_pylist_multithread, gol_c_numpy_api)
 
 root = tk.Tk()
 width_res_input = None
@@ -23,16 +24,16 @@ def fetch_resolution():
 	"""Fetches the resolution from the GUI"""
 	width = int(width_res_input.get())
 	height = int(height_res_input.get())
-	width = max(width, 1)
-	height = max(height, 1)
+	width = max(width, 10)
+	height = max(height, 10)
 	return (width, height)
 
 def fetch_board_size():
 	"""Fetches the board size from the GUI"""
 	width = int(width_board_input.get())
 	height = int(height_board_input.get())
-	width = max(width, 1)
-	height = max(height, 1)
+	width = max(width, 5)
+	height = max(height, 5)
 	return (width, height)
 
 def run_game_from_file():
@@ -100,7 +101,15 @@ def run_benchmaster():
 	"""This function is used to benchmark the different step functions"""
 	root.withdraw()
 	steps_to_benchmark = 100
-	result_string = f"Benchmark results for {steps_to_benchmark} steps:\n"
+	result_string = f"Benchmark results (time for {steps_to_benchmark} steps):\n"
+
+	game = GameOfLifeSim(width=120, height=80, display_size=(1200,800), step_function=gol_py_slooow)
+	game.set_frame_rate(10000)
+	start_time = time.time()
+	with game as tick:
+		while game.get_current_tick() < 100:
+			tick()
+	result_string += f"- solution of 2 for loops through a list (100x smaller board): {time.time() - start_time}\n"
 
 	game = GameOfLifeSim(width=120, height=80, display_size=(1200, 800), step_function=gol_py_trivial)
 	game.set_frame_rate(10000)
@@ -108,8 +117,7 @@ def run_benchmaster():
 	with game as tick:
 		while game.get_current_tick() < 100:
 			tick()
-	result_string += f"- trivial solution of 2 for loops (board is 100x smaller): {time.time() - start_time}\n"
-	#print("Time for 100 steps with gol_py_trivial (the board is reduced by 100 times):", time.time() - start_time)
+	result_string += f"- solution of 2 for loops through a numpy array (100x smaller board): {time.time() - start_time}\n"
 
 
 	game = GameOfLifeSim(width=1200, height=800, step_function=gol_py_simple)
@@ -118,7 +126,6 @@ def run_benchmaster():
 	with game as tick:
 		while game.get_current_tick() < 100:
 			tick()
-	#print("Time for 100 steps with gol_py_simple:", time.time() - start_time)
 	result_string += f"- numpy stride tricks: {time.time() - start_time}\n"
 
 	game = GameOfLifeSim(width=1200, height=800, step_function=gol_py_partial_sums)
@@ -127,28 +134,25 @@ def run_benchmaster():
 	with game as tick:
 		while game.get_current_tick() < 100:
 			tick()
-	#print("Time for 100 steps with gol_py_partial_sums:", time.time() - start_time)
 	result_string += f"- numpy stride tricks with partial sums: {time.time() - start_time}\n"
 
+	if HAS_C_EXTENSION:
+		game = GameOfLifeSim(width=1200, height=800, step_function=gol_c_pylist_multithread)
+		game.set_frame_rate(10000)
+		start_time = time.time()
+		with game as tick:
+			while game.get_current_tick() < 100:
+				tick()
+		result_string += f"- C extension with python lists (utilizing partial sums): {time.time() - start_time}\n"
 
-	game = GameOfLifeSim(width=1200, height=800, step_function=gol_c_pylist_multithread)
-	game.set_frame_rate(10000)
-	start_time = time.time()
-	with game as tick:
-		while game.get_current_tick() < 100:
-			tick()
-	#print("Time for 100 steps with gol_c_pylist_multithread:", time.time() - start_time)
-	result_string += f"- C extension with python lists (utilizing partial sums): {time.time() - start_time}\n"
 
-
-	game = GameOfLifeSim(width=1200, height=800, step_function=gol_c_numpy_api)
-	game.set_frame_rate(10000)
-	start_time = time.time()
-	with game as tick:
-		while game.get_current_tick() < 100:
-			tick()
-	#print("Time for 100 steps with gol_c:", time.time() - start_time)
-	result_string += f"- C extension with numpy arrays (utilizing partial sums): {time.time() - start_time}\n"
+		game = GameOfLifeSim(width=1200, height=800, step_function=gol_c_numpy_api)
+		game.set_frame_rate(10000)
+		start_time = time.time()
+		with game as tick:
+			while game.get_current_tick() < 100:
+				tick()
+		result_string += f"- C extension with numpy arrays (utilizing partial sums): {time.time() - start_time}\n"
 
 	messagebox.showinfo("Benchmark results", result_string)
 
@@ -157,6 +161,8 @@ def run_benchmaster():
 
 
 if __name__ == '__main__':
+	if not HAS_C_EXTENSION:
+		messagebox.showwarning("C extension not found", "C extension not found, using python implementation as default")
 	root.title("Game of Life")
 	root.geometry("300x300")
 	tk.Label(root, text="Resolution").pack(fill='both')
@@ -174,11 +180,11 @@ if __name__ == '__main__':
 	board_frame.pack(fill='both')
 	width_board_input = tk.Entry(board_frame)
 	width_board_input.pack(side='left', fill='both', expand=True)
-	width_board_input.insert(0, "120")
+	width_board_input.insert(0, "1200")
 	tk.Label(board_frame, text="X").pack(side='left', fill='both', expand=False)
 	height_board_input = tk.Entry(board_frame)
 	height_board_input.pack(side = 'right',fill='both', expand=True)
-	height_board_input.insert(0, "80")
+	height_board_input.insert(0, "800")
 	tk.Button(root, text="Select file", command=run_game_from_file).pack(fill='both')
 	tk.Button(root, text="Random layout", command=run_game_from_random).pack(fill='both')
 	tk.Button(root, text="Make pattern", command=run_pattern_maker).pack(fill='both')
